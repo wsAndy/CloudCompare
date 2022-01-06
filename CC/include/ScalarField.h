@@ -25,6 +25,9 @@
 
 //System
 #include <vector>
+#include <fstream>
+#include <iostream>
+#include <array>
 
 namespace CCLib
 {
@@ -66,8 +69,16 @@ public:
 	**/
 	CC_CORE_LIB_API void computeMeanAndVariance(ScalarType &mean, ScalarType* variance = nullptr) const;
 
+	/**
+    * 在均值的3个标准差内的数据占比
+	*/
+	CC_CORE_LIB_API void compute3stdProbability(std::array<float, 3>& probability, ScalarType& mean, ScalarType& stdv);
+
 	//! Determines the min and max values
 	CC_CORE_LIB_API virtual void computeMinAndMax();
+
+	CC_CORE_LIB_API void saveSFBinary(char* fileName);
+	CC_CORE_LIB_API void saveSFTxt(char* fileName);
 
 	//! Returns whether a scalar value is valid or not
 	static inline bool ValidValue(ScalarType value) { return value == value; } //'value == value' fails for NaN values

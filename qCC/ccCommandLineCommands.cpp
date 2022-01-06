@@ -137,6 +137,8 @@ constexpr char OPTION_FILE_NAMES[]						= "FILE";
 constexpr char OPTION_ORIENT[]							= "ORIENT";
 constexpr char OPTION_MODEL[]							= "MODEL";
 
+constexpr char COMMAND_SF_PATH[] = "SF_PATH";
+
 CommandChangeOutputFormat::CommandChangeOutputFormat(const QString& name, const QString& keyword)
     : ccCommandLineInterface::Command(name, keyword)
 {}
@@ -3306,6 +3308,10 @@ bool CommandDist::process(ccCommandLineInterface &cmd)
 		compCloud = cmd.clouds().front().pc;
 	}
 	assert(compEntity && compCloud);
+
+	//QString meshName = cmd.meshes()[nextMeshIndex].getEntity()->getName();
+	// QString meshName = cmd.meshes()[nextMeshIndex].mesh->getParent()->getName();
+	//QString meshName = QString::number(cmd.meshes().size());
 	
 	//reference entity
 	ccHObject* refEntity = nullptr;
@@ -3339,6 +3345,8 @@ bool CommandDist::process(ccCommandLineInterface &cmd)
 	double maxDist = 0.0;
 	unsigned octreeLevel = 0;
 	int maxThreadCount = 0;
+
+	QString sf_path = QString::fromStdString("");
 	
 	bool splitXYZ = false;
 	int modelIndex = 0;
@@ -3487,11 +3495,17 @@ bool CommandDist::process(ccCommandLineInterface &cmd)
 				return cmd.error(QObject::tr("Invalid thread count! (after %1)").arg(COMMAND_MAX_THREAD_COUNT));
 			}
 		}
+		else if (ccCommandLineInterface::IsCommand(argument, COMMAND_SF_PATH)) {
+			//local option confirmed, we can move on
+			cmd.arguments().pop_front();
+			sf_path = cmd.arguments().takeFirst();
+        }
 		else
 		{
 			break; //as soon as we encounter an unrecognized argument, we break the local loop to go back to the main one!
 		}
 	}
+
 	
 	//spawn dialog (virtually) so as to prepare the comparison process
 	ccComparisonDlg compDlg(compCloud,
@@ -3554,7 +3568,7 @@ bool CommandDist::process(ccCommandLineInterface &cmd)
 		}
 	}
 	
-	if (!compDlg.computeDistances())
+	if (!compDlg.computeDistances(sf_path))
 	{
 		compDlg.cancelAndExit();
 		return cmd.error(QObject::tr("An error occurred during distances computation!"));

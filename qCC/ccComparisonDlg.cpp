@@ -131,7 +131,7 @@ ccComparisonDlg::ccComparisonDlg(	ccHObject* compEntity,
 
 	connect(cancelButton,			&QPushButton::clicked,					this,	&ccComparisonDlg::cancelAndExit);
 	connect(okButton,				&QPushButton::clicked,					this,	&ccComparisonDlg::applyAndExit);
-	connect(computeButton,			&QPushButton::clicked,					this,	&ccComparisonDlg::computeDistances);
+	connect(computeButton, &QPushButton::clicked, this, [this]() { ccComparisonDlg::computeDistances(""); });
 	connect(histoButton,			&QPushButton::clicked,					this,	&ccComparisonDlg::showHisto);
 	connect(maxDistCheckBox,		&QCheckBox::toggled,					this,	&ccComparisonDlg::maxDistUpdated);
 	connect(localModelComboBox, static_cast<void (QComboBox::*)(int)> (&QComboBox::currentIndexChanged),		this,	&ccComparisonDlg::locaModelChanged);
@@ -658,7 +658,7 @@ int ccComparisonDlg::determineBestOctreeLevel(double maxSearchDist)
 	return theBestOctreeLevel;
 }
 
-bool ccComparisonDlg::computeDistances()
+bool ccComparisonDlg::computeDistances(QString sf_path = "")
 {
 	if (!isValid())
 		return false;
@@ -875,13 +875,32 @@ bool ccComparisonDlg::computeDistances()
 		//display some statics about the computed distances
 		ScalarType mean;
 		ScalarType variance;
+		ScalarType stdv;
+		std::array<float, 3> probability = {0.0,0.0,0.0};
 		sf->computeMinAndMax();
 		sf->computeMeanAndVariance(mean, &variance);
-		ccLog::Print("[ComputeDistances] Mean distance = %f / std deviation = %f",mean,sqrt(variance));
+		stdv = sqrt(variance);
+		sf->compute3stdProbability(probability, mean, stdv);
+		ccLog::Print("[ComputeDistances] Mean distance = %.02f / std deviation = %.02f / min = %.02f / max = %.02f / std1pro = %.02f / std2pro = %.02f / std3pro = %.02f",mean, stdv, sf->getMin(), sf->getMax(), probability[0], probability[1], probability[2] );
 
 		m_compCloud->setCurrentDisplayedScalarField(sfIdx);
 		m_compCloud->showSF(sfIdx >= 0);
 
+
+		QString tmp = "./default.bin";
+		// 传入的sf_path为空，或者不传入时，不生成bin文件
+		if (sf_path != "") {
+			if (sf_path.endsWith("bin")) {
+				tmp = sf_path;
+			}
+			else {
+				QDir sfPath(sf_path);
+				tmp = sfPath.absoluteFilePath(QUuid::createUuid().toString() + ".bin");
+            }
+            sf->saveSFBinary(const_cast<char*>(tmp.toStdString().c_str()));
+            ccLog::Print("[SF] %s", tmp.toStdString().c_str());
+		}
+		 
 		//restore UI items
 		okButton->setEnabled(true);
 

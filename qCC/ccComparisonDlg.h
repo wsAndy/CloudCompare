@@ -65,7 +65,7 @@ public:
 	ccHObject* getReferenceEntity() { return m_refEnt; }
 
 public slots:
-	bool computeDistances();
+	bool computeDistances(QString meshName);
 	void applyAndExit();
 	void cancelAndExit();
 
